@@ -1,0 +1,68 @@
+package com.project.webcrawler.logic;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.io.FileUtils;
+
+import java.io.*;
+import java.util.*;
+
+public class CSVProcessor {
+    public File createAllStatReport(Map<String, Integer[]> statistics) {
+        ByteArrayOutputStream csvFileBytes = new ByteArrayOutputStream();
+        File csvFile = new File("report.csv");
+            try (CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(csvFileBytes), CSVFormat.DEFAULT)) {
+                statistics.forEach((link, statisticArray) -> {
+                    try {
+                        Object[] printable = new Object[statisticArray.length + 1];
+                        printable[0] = link;
+                        for (int i = 1; i < printable.length; i++) {
+                            printable[i] = statisticArray[i - 1];
+                        }
+                        printer.printRecord(printable);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+                 FileUtils.writeByteArrayToFile(csvFile, csvFileBytes.toByteArray());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        return csvFile;
+    }
+
+    public File createTopTenStatReport(Map<String, Integer[]> statistics) {
+        ValueTopComparator vtc = new ValueTopComparator(statistics);
+        Map<String, Integer[]> sortedStatistics = new TreeMap<>(vtc);
+        sortedStatistics.putAll(statistics);
+        Map<String, Integer[]> topTenStatistics = new LinkedHashMap<>();
+        int counter = 0;
+        for (Map.Entry<String, Integer[]> entry : sortedStatistics.entrySet()) {
+            if (counter == 9) {
+                break;
+            }
+            topTenStatistics.put(entry.getKey(), entry.getValue());
+            counter++;
+        }
+        ByteArrayOutputStream csvFileBytes = new ByteArrayOutputStream();
+        File csvFile = new File("topTenReport.csv");
+        try (CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(csvFileBytes), CSVFormat.DEFAULT)) {
+            topTenStatistics.forEach((link, statisticArray) -> {
+                try {
+                    Object[] printable = new Object[statisticArray.length + 1];
+                    printable[0] = link;
+                    for (int i = 1; i < printable.length; i++) {
+                        printable[i] = statisticArray[i - 1];
+                    }
+                    printer.printRecord(printable);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            FileUtils.writeByteArrayToFile(csvFile, csvFileBytes.toByteArray());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return csvFile;
+    }
+}
