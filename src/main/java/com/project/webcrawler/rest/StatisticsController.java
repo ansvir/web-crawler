@@ -2,6 +2,7 @@ package com.project.webcrawler.rest;
 
 import com.project.webcrawler.domain.Hit;
 import com.project.webcrawler.domain.Link;
+
 import com.project.webcrawler.domain.Query;
 import com.project.webcrawler.logic.CSVProcessor;
 import com.project.webcrawler.logic.CrawlRequest;
@@ -11,17 +12,18 @@ import com.project.webcrawler.repository.LinkRepository;
 import com.project.webcrawler.repository.QueryRepository;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.websocket.server.PathParam;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 @CrossOrigin(origins = "*")
@@ -49,22 +51,21 @@ public class StatisticsController {
         }
         List<Link> queryLinks = query.getLinks();
         Map<String, Integer[]> statistics = new HashMap<>(queryLinks.size());
-        for (int i = 0; i < queryLinks.size(); i++) {
-            for(Link link : queryLinks) {
-                Integer[] hitsIntegerArray = new Integer[link.getHits().size()];
-                List<Hit> hits = link.getHits();
-                for (int j = 0; j < hitsIntegerArray.length; j++) {
-                    hitsIntegerArray[i] = hits.get(i).getHit();
-                }
-                statistics.put(link.getName(), hitsIntegerArray);
+        for (Link link : queryLinks) {
+            Integer[] hitsIntegerArray = new Integer[link.getHits().size() + 1];
+            List<Hit> hits = link.getHits();
+            for (int j = 0; j < hits.size(); j++) {
+                hitsIntegerArray[j] = hits.get(j).getHit();
             }
+            hitsIntegerArray[hitsIntegerArray.length - 1] = hitRepository.sumHitsByLinkId(link.getId());
+            statistics.put(link.getName(), hitsIntegerArray);
         }
         CSVProcessor csvProcessor = new CSVProcessor();
         File csvFile = csvProcessor.createAllStatReport(statistics);
         InputStreamResource resource;
         try {
             resource = new InputStreamResource(new FileInputStream(csvFile));
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
@@ -95,7 +96,6 @@ public class StatisticsController {
             Link savedLink = linkRepository.save(link);
             links.add(savedLink);
         }
-        query.setLinks(links);
         queryRepository.save(query);
     }
 
@@ -110,18 +110,17 @@ public class StatisticsController {
         }
         List<Link> queryLinks = query.getLinks();
         Map<String, Integer[]> statistics = new HashMap<>(queryLinks.size());
-        for (int i = 0; i < queryLinks.size(); i++) {
-            for(Link link : queryLinks) {
-                Integer[] hitsIntegerArray = new Integer[link.getHits().size()];
-                List<Hit> hits = link.getHits();
-                for (int j = 0; j < hitsIntegerArray.length; j++) {
-                    hitsIntegerArray[i] = hits.get(i).getHit();
-                }
-                statistics.put(link.getName(), hitsIntegerArray);
+        for (Link link : queryLinks) {
+            Integer[] hitsIntegerArray = new Integer[link.getHits().size() + 1];
+            List<Hit> hits = link.getHits();
+            for (int j = 0; j < hits.size(); j++) {
+                hitsIntegerArray[j] = hits.get(j).getHit();
             }
+            hitsIntegerArray[hitsIntegerArray.length - 1] = hitRepository.sumHitsByLinkId(link.getId());
+            statistics.put(link.getName(), hitsIntegerArray);
         }
         CSVProcessor csvProcessor = new CSVProcessor();
-        File csvFile = csvProcessor.createAllStatReport(statistics);
+        File csvFile = csvProcessor.createTopTenStatReport(statistics);
         InputStreamResource resource;
         try {
             resource = new InputStreamResource(new FileInputStream(csvFile));
@@ -129,7 +128,6 @@ public class StatisticsController {
             e.printStackTrace();
             return null;
         }
-
         return ResponseEntity.ok()
                 .contentLength(csvFile.length())
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)

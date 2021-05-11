@@ -17,8 +17,7 @@ public class Link {
 
     public Link() {}
 
-    public Link(String name, List<Hit> hits) {
+    public Link(String name) {
         this.name = name;
-        this.hits = hits;
     }
 }

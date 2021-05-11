@@ -85,37 +85,6 @@ public class WebCrawler {
                 }
                 System.out.println();
             }
-//            Document initialDocument = Jsoup.connect(seed).get();
-//            Integer[] occurrencesInitDoc = findOccurrences(terms, initialDocument);
-//            seedOccurrences.put(seed, occurrencesInitDoc);
-//            System.out.print(seed + " ");
-//            for (Integer occurrence : occurrencesInitDoc) {
-//                System.out.print(occurrence + " ");
-//            }
-//            visitedPages++;
-//            for (int i = 0; i < Constant.MAX_LINK_DEPTH.getValue(); i++) {
-//                Elements linksOnPage = initialDocument.select("a[href]");
-//                for (Element link : linksOnPage) {
-//                    if (visitedPages == Constant.MAX_PAGES_VISITED.getValue()) {
-//                        return;
-//                    }
-//                    String linkString = link.attr("abs:href");
-//                    links.add(linkString);
-//                    Document document = Jsoup.connect(linkString).get();
-//                    Integer[] occurrences = findOccurrences(terms, document);
-//                    seedOccurrences.put(linkString, occurrences);
-//                    visitedPages++;
-//                }
-//            }
-//            Elements linksOnPage = initialDocument.select("a[href]");
-//            for (Element link : linksOnPage) {
-//                links.add(link.attr("abs:href"));
-//                int[] occurrences = computeFoundOccurrences(terms, initialDocument);
-//                for (int i = 0;i < occurrences.length; i++) {
-//                    LOGGER.info(String.valueOf(occurrences[i]));
-//                }
-//                LOGGER.info(link.attr("abs:href"));
-//            }
         return seedOccurrences;
     }
 
@@ -129,9 +98,6 @@ public class WebCrawler {
             while (matcher.find()) {
                 occurrences[i]++;
             }
-        }
-        for (int i = 0; i < occurrences.length-1; i++) {
-            occurrences[occurrences.length-1] += occurrences[i];
         }
         return occurrences;
     }

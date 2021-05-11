@@ -9,9 +9,9 @@ import java.util.*;
 
 public class CSVProcessor {
     public File createAllStatReport(Map<String, Integer[]> statistics) {
-        ByteArrayOutputStream csvFileBytes = new ByteArrayOutputStream();
         File csvFile = new File("report.csv");
-            try (CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(csvFileBytes), CSVFormat.DEFAULT)) {
+            try (ByteArrayOutputStream csvFileBytes = new ByteArrayOutputStream();
+                 CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(csvFileBytes), CSVFormat.DEFAULT)) {
                 statistics.forEach((link, statisticArray) -> {
                     try {
                         Object[] printable = new Object[statisticArray.length + 1];
@@ -20,6 +20,7 @@ public class CSVProcessor {
                             printable[i] = statisticArray[i - 1];
                         }
                         printer.printRecord(printable);
+                        printer.flush();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -44,9 +45,10 @@ public class CSVProcessor {
             topTenStatistics.put(entry.getKey(), entry.getValue());
             counter++;
         }
-        ByteArrayOutputStream csvFileBytes = new ByteArrayOutputStream();
+
         File csvFile = new File("topTenReport.csv");
-        try (CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(csvFileBytes), CSVFormat.DEFAULT)) {
+        try (ByteArrayOutputStream csvFileBytes = new ByteArrayOutputStream();
+                CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(csvFileBytes), CSVFormat.DEFAULT)) {
             topTenStatistics.forEach((link, statisticArray) -> {
                 try {
                     Object[] printable = new Object[statisticArray.length + 1];
@@ -55,6 +57,7 @@ public class CSVProcessor {
                         printable[i] = statisticArray[i - 1];
                     }
                     printer.printRecord(printable);
+                    printer.flush();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

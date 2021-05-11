@@ -13,10 +13,4 @@ public class Query {
     private Long id;
     @OneToMany
     private List<Link> links;
-
-    public Query() {}
-
-    public Query(List<Link> links) {
-        this.links = links;
-    }
 }
