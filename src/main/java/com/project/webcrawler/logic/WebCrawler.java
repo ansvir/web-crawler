@@ -89,7 +89,7 @@ public class WebCrawler {
     }
 
     private Integer[] findOccurrences(String[] terms, Document document) {
-        Integer[] occurrences = new Integer[terms.length+1];
+        Integer[] occurrences = new Integer[terms.length];
         Arrays.fill(occurrences, 0);
         String bodyText = document.body().text();
         for (int i = 0; i < terms.length; i++) {

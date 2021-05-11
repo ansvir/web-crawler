@@ -9,7 +9,7 @@ import java.util.*;
 
 public class CSVProcessor {
     public File createAllStatReport(Map<String, Integer[]> statistics) {
-        File csvFile = new File("report.csv");
+        File csvFile = new File("src/main/resources/files/report.csv");
             try (ByteArrayOutputStream csvFileBytes = new ByteArrayOutputStream();
                  CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(csvFileBytes), CSVFormat.DEFAULT)) {
                 statistics.forEach((link, statisticArray) -> {
@@ -46,7 +46,7 @@ public class CSVProcessor {
             counter++;
         }
 
-        File csvFile = new File("topTenReport.csv");
+        File csvFile = new File("src/main/resources/files/topTenReport.csv");
         try (ByteArrayOutputStream csvFileBytes = new ByteArrayOutputStream();
                 CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(csvFileBytes), CSVFormat.DEFAULT)) {
             topTenStatistics.forEach((link, statisticArray) -> {

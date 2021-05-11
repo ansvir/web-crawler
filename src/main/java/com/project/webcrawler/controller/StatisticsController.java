@@ -1,4 +1,4 @@
-package com.project.webcrawler.rest;
+package com.project.webcrawler.controller;
 
 import com.project.webcrawler.domain.Hit;
 import com.project.webcrawler.domain.Link;
@@ -10,20 +10,16 @@ import com.project.webcrawler.logic.WebCrawler;
 import com.project.webcrawler.repository.HitRepository;
 import com.project.webcrawler.repository.LinkRepository;
 import com.project.webcrawler.repository.QueryRepository;
-import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.websocket.server.PathParam;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 @CrossOrigin(origins = "*")
@@ -70,7 +66,11 @@ public class StatisticsController {
             return null;
         }
 
+        HttpHeaders header = new HttpHeaders();
+        header.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=report.csv");
+
         return ResponseEntity.ok()
+                .headers(header)
                 .contentLength(csvFile.length())
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(resource);
@@ -79,7 +79,12 @@ public class StatisticsController {
     @PostMapping("/add")
     public void addCrawling(@RequestBody CrawlRequest crawlRequest) {
         WebCrawler webCrawler = new WebCrawler();
-        Map<String, Integer[]> statistics = webCrawler.crawl(crawlRequest.getSeed(), (String[]) crawlRequest.getTerms().toArray());
+        List<String> termsList = crawlRequest.getTerms();
+        String[] termsArray = new String[termsList.size()];
+        for (int i = 0; i < termsList.size(); i++) {
+            termsArray[i] = termsList.get(i);
+        }
+        Map<String, Integer[]> statistics = webCrawler.crawl(crawlRequest.getSeed(), termsArray);
         Query query = new Query();
         List<Link> links = new ArrayList<>();
         for (Map.Entry<String, Integer[]> stat : statistics.entrySet()) {
@@ -96,11 +101,12 @@ public class StatisticsController {
             Link savedLink = linkRepository.save(link);
             links.add(savedLink);
         }
+        query.setLinks(links);
         queryRepository.save(query);
     }
 
     @GetMapping("/top/ten/{id}")
-    public ResponseEntity<Resource> getTopTenStatistics(@PathParam("id") Long id) {
+    public ResponseEntity<Resource> getTopTenStatistics(@PathVariable Long id) {
         Optional<Query> optQuery = queryRepository.findById(id);
         Query query;
         if (optQuery.isPresent()) {
@@ -128,7 +134,12 @@ public class StatisticsController {
             e.printStackTrace();
             return null;
         }
+
+        HttpHeaders header = new HttpHeaders();
+        header.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=topTenReport.csv");
+
         return ResponseEntity.ok()
+                .headers(header)
                 .contentLength(csvFile.length())
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(resource);
