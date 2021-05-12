@@ -8,27 +8,34 @@ import java.io.*;
 import java.util.*;
 
 public class CSVProcessor {
+
+    /**
+     * This method is used for generating CSV file that contains lines of statistics parameter
+     *
+     * @param statistics Map that contains links and according occurrences of term ordered by terms specified in CrawlRequest
+     * @return Generated CSV file
+     */
     public File createAllStatReport(Map<String, Integer[]> statistics) {
         File csvFile = new File("src/main/resources/files/report.csv");
-            try (ByteArrayOutputStream csvFileBytes = new ByteArrayOutputStream();
-                 CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(csvFileBytes), CSVFormat.DEFAULT)) {
-                statistics.forEach((link, statisticArray) -> {
-                    try {
-                        Object[] printable = new Object[statisticArray.length + 1];
-                        printable[0] = link;
-                        for (int i = 1; i < printable.length; i++) {
-                            printable[i] = statisticArray[i - 1];
-                        }
-                        printer.printRecord(printable);
-                        printer.flush();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+        try (ByteArrayOutputStream csvFileBytes = new ByteArrayOutputStream();
+             CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(csvFileBytes), CSVFormat.DEFAULT)) {
+            statistics.forEach((link, statisticArray) -> {
+                try {
+                    Object[] printable = new Object[statisticArray.length + 1];
+                    printable[0] = link;
+                    for (int i = 1; i < printable.length; i++) {
+                        printable[i] = statisticArray[i - 1];
                     }
-                });
-                 FileUtils.writeByteArrayToFile(csvFile, csvFileBytes.toByteArray());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+                    printer.printRecord(printable);
+                    printer.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            FileUtils.writeByteArrayToFile(csvFile, csvFileBytes.toByteArray());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return csvFile;
     }
 
@@ -48,7 +55,7 @@ public class CSVProcessor {
 
         File csvFile = new File("src/main/resources/files/topTenReport.csv");
         try (ByteArrayOutputStream csvFileBytes = new ByteArrayOutputStream();
-                CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(csvFileBytes), CSVFormat.DEFAULT)) {
+             CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(csvFileBytes), CSVFormat.DEFAULT)) {
             topTenStatistics.forEach((link, statisticArray) -> {
                 try {
                     Object[] printable = new Object[statisticArray.length + 1];

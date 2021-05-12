@@ -1,7 +1,7 @@
 package com.project.webcrawler.logic;
 
 public enum Constant {
-    MAX_LINK_DEPTH(2), MAX_PAGES_VISITED(10000);
+    MAX_LINK_DEPTH(2), MAX_PAGES_VISITED(10_000);
 
     private final int VALUE;
 

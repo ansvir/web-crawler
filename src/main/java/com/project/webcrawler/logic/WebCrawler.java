@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,67 +37,72 @@ public class WebCrawler {
     }
 
     public Map<String, Integer[]> crawl(String seed, String... terms) {
-            Map<String, Integer[]> seedOccurrences = new LinkedHashMap<>();
-            links.add(seed);
-            for (int i = 0; i < MAX_LINK_DEPTH.getValue(); i++) {
-                crawlingController.sendCrawlingLog("Current depth: " + i);
-                for (String link : links) {
-                    if (visitedPages.contains(link)) {
+        Map<String, Integer[]> seedOccurrences = new LinkedHashMap<>();
+        links.add(seed);
+        for (int i = 0; i < MAX_LINK_DEPTH.getValue(); i++) {
+            crawlingController.sendCrawlingLog("Current depth: " + i);
+            for (String link : links) {
+
+                if (visitedPages.contains(link)) {
+                    continue;
+                }
+                if (visitedPages.size() >= MAX_PAGES_VISITED.getValue()) {
+                    crawlingController.sendCrawlingLog("Max pages visits reached. Aborting");
+                    return seedOccurrences;
+                }
+                System.out.println(visitedPages.size());
+                try {
+                    Connection.Response response = Jsoup.connect(link).timeout(2 * 1000).execute();
+                    String contentType = response.contentType();
+                    if (!contentType.startsWith("text/html")) {
                         continue;
                     }
-                    if (visitedPages.size() >= MAX_PAGES_VISITED.getValue()) {
-                        crawlingController.sendCrawlingLog("Max pages visits reached. Aborting");
-                        return seedOccurrences;
+                    if (link.contains("#")) {
+                        continue;
                     }
                     crawlingController.sendCrawlingLog("Crawling [" + link + "]");
-                    try {
-                        Connection.Response response = Jsoup.connect(link).execute();
-                        String contentType = response.contentType();
-                        if (!contentType.startsWith("text/html")) {
-                            continue;
-                        }
-                        if (link.contains("#")) {
-                            continue;
-                        }
-                        System.out.println(link);
-                        Document document = response.parse();
-                        Integer[] occurrences = findOccurrences(terms, document);
-                        seedOccurrences.put(link, occurrences);
-                        newLinks.addAll(getPageLinks(link));
-                    } catch (UnsupportedMimeTypeException e) {
-                        String message = "Unsupported mimetype for link [" + link + "]";
-                        crawlingController.sendCrawlingLog(message);
-                        e.printStackTrace();
-                    } catch (MalformedURLException e) {
-                        String message = "Unsupported protocol, link [" + link + "] skipped";
-                        crawlingController.sendCrawlingLog(message);
-                        e.printStackTrace();
-                    } catch (HttpStatusException e) {
-                        String message = "HTTP status is incorrect to parse the page [" + link + "]";
-                        crawlingController.sendCrawlingLog(message);
-                        e.printStackTrace();
-                    } catch (IOException | IllegalArgumentException e) {
-                        String message = "Link [" + link + "] skipped according to some reason";
-                        crawlingController.sendCrawlingLog(message);
-                        e.printStackTrace();
-                    }
-                    finally {
-                        visitedPages.add(link);
-                    }
+                    System.out.println(link);
+                    Document document = response.parse();
+                    Integer[] occurrences = findOccurrences(terms, document);
+                    seedOccurrences.put(link, occurrences);
+                    newLinks.addAll(getPageLinks(document));
+                } catch (SocketTimeoutException e) {
+                    String message = "Timout of connecting to the page [" + link + "]";
+                    crawlingController.sendCrawlingLog(message);
+                    e.printStackTrace();
+                } catch (UnsupportedMimeTypeException e) {
+                    String message = "Unsupported mimetype for link [" + link + "]";
+                    crawlingController.sendCrawlingLog(message);
+                    e.printStackTrace();
+                } catch (MalformedURLException e) {
+                    String message = "Unsupported protocol, link [" + link + "] skipped";
+                    crawlingController.sendCrawlingLog(message);
+                    e.printStackTrace();
+                } catch (HttpStatusException e) {
+                    String message = "HTTP status is incorrect to parse the page [" + link + "]";
+                    crawlingController.sendCrawlingLog(message);
+                    e.printStackTrace();
+                } catch (IOException | IllegalArgumentException e) {
+                    String message = "Link [" + link + "] skipped according to some reason";
+                    crawlingController.sendCrawlingLog(message);
+                    e.printStackTrace();
+                } finally {
+                    visitedPages.add(link);
                 }
-                links.addAll(newLinks);
-                newLinks.clear();
             }
+            links.addAll(newLinks);
+            newLinks.clear();
+        }
 
-            for (Map.Entry<String,Integer[]> entry : seedOccurrences.entrySet()) {
-                System.out.print(entry.getKey() + " ");
-                for (Integer hit : entry.getValue()) {
-                    System.out.print(hit + " ");
-                }
-                System.out.println();
+        for (Map.Entry<String, Integer[]> entry : seedOccurrences.entrySet()) {
+            System.out.print(entry.getKey() + " ");
+            for (Integer hit : entry.getValue()) {
+                System.out.print(hit + " ");
             }
-            links.clear();
-            visitedPages.clear();
+            System.out.println();
+        }
+        links.clear();
+        visitedPages.clear();
         return seedOccurrences;
     }
 
@@ -114,9 +120,8 @@ public class WebCrawler {
         return occurrences;
     }
 
-    private Set<String> getPageLinks(String link) throws IOException {
+    private Set<String> getPageLinks(Document document) throws IOException {
         Set<String> links = new LinkedHashSet<>();
-        Document document = Jsoup.connect(link).get();
         Elements linksOnPage = document.select("a[href]");
         for (Element linkOnPage : linksOnPage) {
             String linkString = linkOnPage.attr("abs:href");

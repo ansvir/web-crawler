@@ -11,6 +11,10 @@ public class CrawlingController {
     @Autowired
     private SimpMessagingTemplate simpMessagingTemplate;
 
+    /**
+     * This method is used to send message to subscriber for specified URL
+     * @param message Message to be sent
+     */
     public void sendCrawlingLog(String message) {
         simpMessagingTemplate.convertAndSend("/crawling/log", new CrawlLog(message));
     }

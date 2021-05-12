@@ -10,7 +10,7 @@ $(document).ready(function () {
             queries = response;
             for (let i = 0; i < queries.length; i++) {
                 $('#querySelect').append(`
-                    <option id="query-${i}">${queries[i].name}</option>
+                    <option id="query-${queries[i].id}">${queries[i].name}</option>
                 `);
             }
         }
@@ -32,7 +32,7 @@ $(document).ready(function () {
                 </td>
             </tr>
         `);
-        for (let i = 1 ; i <= termsCounter; i++) {
+        for (let i = 1; i <= termsCounter; i++) {
             $(document).on('click', `#deleteTerm-${i}`, function () {
                 $(`#termRecord-${i}`).remove();
             });
@@ -40,7 +40,7 @@ $(document).ready(function () {
         termsCounter++;
     });
 
-    $('#crawlButton').on('click', function() {
+    $('#crawlButton').on('click', function () {
         let $output = $('#output');
         $output.text("");
         let loadingImage = $('#loadingImage');
@@ -60,12 +60,11 @@ $(document).ready(function () {
             type: 'POST',
             url: contextPath + '/stat/add',
             data: JSON.stringify({
-                seed : seed,
-                terms : terms
+                seed: seed,
+                terms: terms
             }),
             dataType: 'json',
-            beforeSend: function() {
-                console.log("beforeSend")
+            beforeSend: function () {
                 loadingImage.show();
                 let socket = new SockJS('/websocket');
                 stompClient = Stomp.over(socket);
@@ -78,7 +77,6 @@ $(document).ready(function () {
             },
             complete: function () {
                 $output = $('#output');
-                console.log("complete");
                 if (stompClient !== null) {
                     stompClient.disconnect();
                 }
@@ -95,16 +93,58 @@ $(document).ready(function () {
                         `)
                         for (let i = 0; i < queries.length; i++) {
                             $querySelect.append(`
-                                <option id="query-${i}">${queries[i].name}</option>
+                                <option id="query-${queries[i].id}">${queries[i].name}</option>
                             `);
                         }
                     }
-                }).fail(function(xhr, status, error) {
+                }).fail(function (xhr, status, error) {
                     $('#output').append("Some error occurred\n");
                     console.log(error);
                     console.log(status);
                 });
             }
+        });
+    });
+
+    $(document).on('change', '#querySelect', function () {
+        $('#downloadAllStatReport').on('click', function () {
+            let $querySelect = $('#querySelect');
+            if ($querySelect.val() === "-") {
+                return;
+            }
+            let queryId = null;
+            $.each($("#querySelect option:selected"), function () {
+                queryId = $(this).attr('id');
+                queryId = queryId.substring(6);
+                console.log(queryId);
+            });
+
+            $.ajax({
+                url: contextPath + `/stat/all/${queryId}`,
+                success: function() {
+                    window.location = contextPath + `/stat/all/${queryId}`;
+                }
+            });
+
+        });
+        $('#downloadTopTenStatReport').on('click', function () {
+            let $querySelect = $('#querySelect');
+            if ($querySelect.val() === "-") {
+                return;
+            }
+            let queryId = null;
+            $.each($("#querySelect option:selected"), function () {
+                queryId = $(this).attr('id');
+                queryId = queryId.substring(6);
+                console.log(queryId);
+            });
+
+            $.ajax({
+                url: contextPath + `/stat/top/ten/${queryId}`,
+                success: function() {
+                    window.location = contextPath + `/stat/top/ten/${queryId}`;
+                }
+            });
         });
     });
 });
