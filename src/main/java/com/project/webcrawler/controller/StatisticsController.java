@@ -10,6 +10,9 @@ import com.project.webcrawler.logic.WebCrawler;
 import com.project.webcrawler.repository.HitRepository;
 import com.project.webcrawler.repository.LinkRepository;
 import com.project.webcrawler.repository.QueryRepository;
+import org.joda.time.LocalDateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -18,7 +21,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.websocket.server.PathParam;
 import java.io.*;
 import java.util.*;
 
@@ -35,6 +37,9 @@ public class StatisticsController {
 
     @Autowired
     private HitRepository hitRepository;
+
+    @Autowired
+    private WebCrawler webCrawler;
 
     @GetMapping("/all/{id}")
     public ResponseEntity<Resource> getAllStatistics(@PathVariable Long id) {
@@ -78,7 +83,6 @@ public class StatisticsController {
 
     @PostMapping("/add")
     public void addCrawling(@RequestBody CrawlRequest crawlRequest) {
-        WebCrawler webCrawler = new WebCrawler();
         List<String> termsList = crawlRequest.getTerms();
         String[] termsArray = new String[termsList.size()];
         for (int i = 0; i < termsList.size(); i++) {
@@ -102,6 +106,10 @@ public class StatisticsController {
             links.add(savedLink);
         }
         query.setLinks(links);
+        Query savedQuery = queryRepository.save(query);
+        DateTimeFormatter dateFormat = DateTimeFormat
+                .forPattern("d-M-Y H:m:s");
+        savedQuery.setName("Query" + savedQuery.getId() + " " + dateFormat.print(new LocalDateTime()));
         queryRepository.save(query);
     }
 
@@ -143,5 +151,10 @@ public class StatisticsController {
                 .contentLength(csvFile.length())
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(resource);
+    }
+
+    @GetMapping("/query/all")
+    public List<Query> getALlQueries() {
+        return (List<Query>) queryRepository.findAll();
     }
 }

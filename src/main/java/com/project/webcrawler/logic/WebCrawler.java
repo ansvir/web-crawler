@@ -1,5 +1,6 @@
 package com.project.webcrawler.logic;
 
+import com.project.webcrawler.controller.CrawlingController;
 import org.jsoup.Connection;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
@@ -7,21 +8,26 @@ import org.jsoup.UnsupportedMimeTypeException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.project.webcrawler.logic.Constant.MAX_LINK_DEPTH;
 import static com.project.webcrawler.logic.Constant.MAX_PAGES_VISITED;
 
+@Component
 public class WebCrawler {
     private Set<String> links;
     private Set<String> newLinks;
     private Set<String> visitedPages;
+
+    @Autowired
+    private CrawlingController crawlingController;
 
     public WebCrawler() {
         links = new LinkedHashSet<>();
@@ -33,42 +39,46 @@ public class WebCrawler {
             Map<String, Integer[]> seedOccurrences = new LinkedHashMap<>();
             links.add(seed);
             for (int i = 0; i < MAX_LINK_DEPTH.getValue(); i++) {
-                System.out.println("Depth: " + i);
+                crawlingController.sendCrawlingLog("Current depth: " + i);
                 for (String link : links) {
                     if (visitedPages.contains(link)) {
                         continue;
                     }
                     if (visitedPages.size() >= MAX_PAGES_VISITED.getValue()) {
+                        crawlingController.sendCrawlingLog("Max pages visits reached. Aborting");
                         return seedOccurrences;
                     }
-                    System.out.println(link);
+                    crawlingController.sendCrawlingLog("Crawling [" + link + "]");
                     try {
                         Connection.Response response = Jsoup.connect(link).execute();
                         String contentType = response.contentType();
-                        System.out.println(contentType);
                         if (!contentType.startsWith("text/html")) {
                             continue;
                         }
+                        if (link.contains("#")) {
+                            continue;
+                        }
+                        System.out.println(link);
                         Document document = response.parse();
                         Integer[] occurrences = findOccurrences(terms, document);
                         seedOccurrences.put(link, occurrences);
                         newLinks.addAll(getPageLinks(link));
-                    } catch (IllegalArgumentException e) {
-                        System.out.println("link [" + link + "] skipped according to");
-                        e.printStackTrace();
                     } catch (UnsupportedMimeTypeException e) {
-                        System.out.println("Unsupported mimetype for link [" + link + "]");
+                        String message = "Unsupported mimetype for link [" + link + "]";
+                        crawlingController.sendCrawlingLog(message);
                         e.printStackTrace();
                     } catch (MalformedURLException e) {
-                        System.out.println("Unsupported protocol, link [" + link + "] skipped");
+                        String message = "Unsupported protocol, link [" + link + "] skipped";
+                        crawlingController.sendCrawlingLog(message);
                         e.printStackTrace();
                     } catch (HttpStatusException e) {
-                        System.out.println("Http status is incorrect to parse the page [" + link + "]");
+                        String message = "HTTP status is incorrect to parse the page [" + link + "]";
+                        crawlingController.sendCrawlingLog(message);
                         e.printStackTrace();
-                    } catch (IOException e) {
-                        System.out.println("IOException occurred");
+                    } catch (IOException | IllegalArgumentException e) {
+                        String message = "Link [" + link + "] skipped according to some reason";
+                        crawlingController.sendCrawlingLog(message);
                         e.printStackTrace();
-
                     }
                     finally {
                         visitedPages.add(link);
@@ -85,6 +95,8 @@ public class WebCrawler {
                 }
                 System.out.println();
             }
+            links.clear();
+            visitedPages.clear();
         return seedOccurrences;
     }
 

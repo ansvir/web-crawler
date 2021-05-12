@@ -7,6 +7,9 @@ import com.project.webcrawler.repository.HitRepository;
 import com.project.webcrawler.repository.LinkRepository;
 import com.project.webcrawler.repository.QueryRepository;
 import lombok.AllArgsConstructor;
+import org.joda.time.LocalDateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -221,7 +224,11 @@ public class DatabaseLoader implements ApplicationRunner {
         Query query = new Query();
         query.setLinks(links);
 
-        queryRepository.save(query);
+        Query savedQuery = queryRepository.save(query);
+        DateTimeFormatter dateFormat = DateTimeFormat
+                .forPattern("d-M-Y H:m:s");
+        savedQuery.setName("Query" + savedQuery.getId() + " " + dateFormat.print(new LocalDateTime()));
+        queryRepository.save(savedQuery);
 
     }
 }
