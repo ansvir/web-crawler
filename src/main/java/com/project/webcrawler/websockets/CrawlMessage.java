@@ -3,12 +3,12 @@ package com.project.webcrawler.websockets;
 import lombok.Data;
 
 @Data
-public class CrawlLog {
+public class CrawlMessage {
     private String content;
 
-    public CrawlLog() {}
+    public CrawlMessage() {}
 
-    public CrawlLog(String content) {
+    public CrawlMessage(String content) {
         this.content = content;
     }
 }

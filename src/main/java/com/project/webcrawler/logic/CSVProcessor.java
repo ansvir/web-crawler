@@ -39,6 +39,12 @@ public class CSVProcessor {
         return csvFile;
     }
 
+    /**
+     * This method is used for generating CSV file that contains top ten lines of statistics parameter and total occurrences for each line ordered descending
+     *
+     * @param statistics Map that contains links and according occurrences of term ordered by terms specified in CrawlRequest
+     * @return Generated CSV file
+     */
     public File createTopTenStatReport(Map<String, Integer[]> statistics) {
         ValueTopComparator vtc = new ValueTopComparator(statistics);
         Map<String, Integer[]> sortedStatistics = new TreeMap<>(vtc);

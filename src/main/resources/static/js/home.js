@@ -3,6 +3,9 @@ $(document).ready(function () {
     let termsCounter = 1;
     let queries = [];
     let stompClient = null;
+    let crawlingFinished = true;
+
+    $('#loadingImage').hide();
 
     $.ajax({
         url: contextPath + "/stat/query/all",
@@ -10,7 +13,7 @@ $(document).ready(function () {
             queries = response;
             for (let i = 0; i < queries.length; i++) {
                 $('#querySelect').append(`
-                    <option id="query-${queries[i].id}">${queries[i].name}</option>
+                    <option name="queryOption" id="query-${queries[i].id}">${queries[i].name}</option>
                 `);
             }
         }
@@ -65,45 +68,60 @@ $(document).ready(function () {
             }),
             dataType: 'json',
             beforeSend: function () {
+                crawlingFinished = false;
                 loadingImage.show();
                 let socket = new SockJS('/websocket');
                 stompClient = Stomp.over(socket);
                 stompClient.connect({}, function () {
                     stompClient.subscribe('/crawling/log', function (log) {
                         $output.append(">>" + JSON.parse(log.body).content + "\n");
-                        $output.scrollTop = $output.scrollHeight;
+                        if($output.length) {
+                            $output.scrollTop($output[0].scrollHeight - $output.height());
+                        }
                     });
                 });
             },
             complete: function () {
+                crawlingFinished = true;
                 $output = $('#output');
                 if (stompClient !== null) {
                     stompClient.disconnect();
                 }
                 loadingImage.hide();
                 $output.append("Crawling finished\n");
-                $output.scrollTop = $output.scrollHeight;
+                if($output.length) {
+                    $output.scrollTop($output[0].scrollHeight - $output.height());
+                }
                 $.ajax({
                     url: contextPath + "/stat/query/all",
                     success: function (response) {
                         queries = response;
                         let $querySelect = $('#querySelect');
                         $querySelect.html(`
-                            <option>-</option>
+                            <option name="queryOption">-</option>
                         `)
                         for (let i = 0; i < queries.length; i++) {
                             $querySelect.append(`
-                                <option id="query-${queries[i].id}">${queries[i].name}</option>
+                                <option name="queryOption" id="query-${queries[i].id}">${queries[i].name}</option>
                             `);
                         }
                     }
                 }).fail(function (xhr, status, error) {
                     $('#output').append("Some error occurred\n");
+                    crawlingFinished = true;
                     console.log(error);
                     console.log(status);
                 });
             }
         });
+    });
+
+    $('#stopCrawlButton').on('click', function () {
+        if (crawlingFinished) {
+            return;
+        }
+        $('#loadingImage').hide();
+        stompClient.send("/app/stop");
     });
 
     $(document).on('change', '#querySelect', function () {
@@ -147,4 +165,10 @@ $(document).ready(function () {
             });
         });
     });
+
+    $('#output').on('input', function() {
+        if ($(this).val().length >= 5000) {
+            $(this).val("");
+        }
+    })
 });

@@ -25,7 +25,7 @@
     </div>
     <div class="row">
         <div class="col-1"></div>
-        <div class="col-6 border-right">
+        <div class="col-4 border-right d-flex flex-column">
             <div class="row bg-light">
                 <div class="col mt-2">
                     <label for="inputSeed">Seed</label>
@@ -47,19 +47,26 @@
             <div class="row bg-light">
                 <div class="col">
                     <button id="crawlButton" type="button" class="btn btn-info rounded mb-2">Crawl</button>
-                </div>
-                <div class="spinner-border" role="status">
-                    <span class="sr-only">Loading...</span>
+                    <div id="loadingImage" class="spinner-border" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
                 </div>
             </div>
+            <div class="row bg-light h-100">
+            </div>
         </div>
-        <div class="col-4 bg-light">
+        <div class="col-6 bg-light">
             <div class="row my-2">
                 <div class="col">
                     <label for="output">Output</label>
                     <div class="input-group">
-                        <textarea rows="10" readonly style="resize: none" id="output" class="form-control"></textarea>
+                        <textarea rows="15" readonly style="resize: none" id="output" class="form-control"></textarea>
                     </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <button id="stopCrawlButton" type="button" class="btn btn-danger rounded mb-2">Stop</button>
                 </div>
             </div>
             <div class="row">
@@ -67,7 +74,7 @@
                     <div class="form-group">
                         <label for="querySelect">Queries</label>
                         <select class="form-control" id="querySelect">
-                            <option>-</option>
+                            <option name="queryOption">-</option>
                         </select>
                     </div>
                 </div>

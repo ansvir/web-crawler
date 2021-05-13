@@ -41,6 +41,11 @@ public class StatisticsController {
     @Autowired
     private WebCrawler webCrawler;
 
+    /**
+     * This method is used for send a generated CSV file to the user with the statistics of al links and occurrences of the query
+     * @param id Id of query
+     * @return CSV file
+     */
     @GetMapping("/all/{id}")
     public ResponseEntity<Resource> getAllStatistics(@PathVariable Long id) {
         Optional<Query> optQuery = queryRepository.findById(id);
@@ -81,6 +86,10 @@ public class StatisticsController {
                 .body(resource);
     }
 
+    /**
+     * This method is used for running web crawler and adding it's results to database as a new query
+     * @param crawlRequest body that contains seed name and terms
+     */
     @PostMapping("/add")
     public void addCrawling(@RequestBody CrawlRequest crawlRequest) {
         List<String> termsList = crawlRequest.getTerms();
@@ -113,6 +122,11 @@ public class StatisticsController {
         queryRepository.save(query);
     }
 
+    /**
+     * This method is used for send a generated CSV file to the user with the ordered descending top ten statistics of al links and occurrences of the query
+     * @param id Id of query
+     * @return CSV file
+     */
     @GetMapping("/top/ten/{id}")
     public ResponseEntity<Resource> getTopTenStatistics(@PathVariable Long id) {
         Optional<Query> optQuery = queryRepository.findById(id);
@@ -153,6 +167,10 @@ public class StatisticsController {
                 .body(resource);
     }
 
+    /**
+     * This method is used for fetching all existing queries
+     * @return list of queries
+     */
     @GetMapping("/query/all")
     public List<Query> getALlQueries() {
         return (List<Query>) queryRepository.findAll();
