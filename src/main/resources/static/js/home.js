@@ -4,8 +4,12 @@ $(document).ready(function () {
     let queries = [];
     let stompClient = null;
     let crawlingFinished = true;
+    let crawledPages = 0;
+    let currentDepth = 0;
 
     $('#loadingImage').hide();
+    $('#currentDepthLabel').hide();
+    $('#pagesCrawledLabel').hide();
 
     $.ajax({
         url: contextPath + "/stat/query/all",
@@ -44,6 +48,13 @@ $(document).ready(function () {
     });
 
     $('#crawlButton').on('click', function () {
+        if (!crawlingFinished) {
+            return;
+        }
+        $('#currentDepthLabel').show();
+        $('#pagesCrawledLabel').show();
+        crawledPages = 0;
+        currentDepth = 0;
         let $output = $('#output');
         $output.text("");
         let loadingImage = $('#loadingImage');
@@ -72,12 +83,22 @@ $(document).ready(function () {
                 loadingImage.show();
                 let socket = new SockJS('/websocket');
                 stompClient = Stomp.over(socket);
+                stompClient.debug = null;
                 stompClient.connect({}, function () {
                     stompClient.subscribe('/crawling/log', function (log) {
                         $output.append(">>" + JSON.parse(log.body).content + "\n");
+                        checkOutputFilled();
                         if($output.length) {
                             $output.scrollTop($output[0].scrollHeight - $output.height());
                         }
+                    });
+                    stompClient.subscribe('/crawling/pages', function (pages) {
+                        crawledPages = JSON.parse(pages.body).pagesCrawled;
+                        $('#pagesCrawledValue').text(crawledPages);
+                    });
+                    stompClient.subscribe('/crawling/depth', function (depth) {
+                        currentDepth = JSON.parse(depth.body).currentDepth;
+                        $('#currentDepthValue').text(currentDepth);
                     });
                 });
             },
@@ -89,6 +110,7 @@ $(document).ready(function () {
                 }
                 loadingImage.hide();
                 $output.append("Crawling finished\n");
+                checkOutputFilled();
                 if($output.length) {
                     $output.scrollTop($output[0].scrollHeight - $output.height());
                 }
@@ -107,7 +129,8 @@ $(document).ready(function () {
                         }
                     }
                 }).fail(function (xhr, status, error) {
-                    $('#output').append("Some error occurred\n");
+                    $output.append("Some error occurred\n");
+                    checkOutputFilled();
                     crawlingFinished = true;
                     console.log(error);
                     console.log(status);
@@ -166,9 +189,12 @@ $(document).ready(function () {
         });
     });
 
-    $('#output').on('input', function() {
-        if ($(this).val().length >= 5000) {
-            $(this).val("");
+    function checkOutputFilled() {
+        let $output = $('#output');
+        if ($output.val().length >= 50000) {
+            console.log("cleared");
+            $output.empty();
+            $output.append("Output cleared because 50000 symbols were reached\n");
         }
-    })
+    }
 });

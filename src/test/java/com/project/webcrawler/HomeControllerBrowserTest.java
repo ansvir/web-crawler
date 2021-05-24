@@ -1,5 +1,7 @@
 package com.project.webcrawler;
 
+import com.project.webcrawler.initiliaze.DatabaseLoader;
+import com.project.webcrawler.websockets.WebSocketConfig;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.List;
@@ -23,7 +26,13 @@ import java.util.regex.Pattern;
 import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+classes = {
+        WebCrawlerApplication.class,
+        WebSocketConfig.class,
+        WebConfig.class,
+        DatabaseLoader.class
+})
 public class HomeControllerBrowserTest {
 
     private static HtmlUnitDriver browser;
@@ -60,8 +69,10 @@ public class HomeControllerBrowserTest {
 
     private void checkQueriesSelect() {
         assertEquals(homePageUrl(), browser.getCurrentUrl());
-        WebDriverWait webDriverWait = new WebDriverWait(browser, 30);
-        webDriverWait.until(ExpectedConditions.numberOfElementsToBe(By.name("queryOption"), 2));
+//        WebDriverWait webDriverWait = new WebDriverWait(browser, 10);
+        List<WebElement> queries = browser.findElements(By.name("queryOption"));
+        assertEquals(2, queries.size());
+//        webDriverWait.until(ExpectedConditions.numberOfElementsToBe(By.name("queryOption"), 2));
 
     }
     private void fillSeedAndTermsClickCrawl() {

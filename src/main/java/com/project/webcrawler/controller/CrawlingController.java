@@ -38,6 +38,14 @@ public class CrawlingController {
         simpMessagingTemplate.convertAndSend("/crawling/log", new CrawlMessage(message));
     }
 
+    public void sendPagesCrawled(int pagesCrawled) {
+        simpMessagingTemplate.convertAndSend("/crawling/pages", new CrawlMessage(pagesCrawled, "pages"));
+    }
+
+    public void sendCurrentDepth(int currentDepth) {
+        simpMessagingTemplate.convertAndSend("/crawling/depth", new CrawlMessage(currentDepth, "depth"));
+    }
+
     public boolean getStopRequest() {
         return this.stopRequest;
     }

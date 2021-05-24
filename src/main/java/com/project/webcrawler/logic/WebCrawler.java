@@ -1,7 +1,7 @@
 package com.project.webcrawler.logic;
 
 import com.project.webcrawler.controller.CrawlingController;
-import com.project.webcrawler.websockets.StopRequestException;
+import com.project.webcrawler.websockets.StopCrawlingException;
 import org.jsoup.Connection;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
@@ -15,7 +15,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -46,157 +45,163 @@ public class WebCrawler {
      */
     public Map<String, Integer[]> crawl(String seed, String... terms) {
         Map<String, Integer[]> seedOccurrences = new LinkedHashMap<>();
+        boolean stopCrawling = false;
+//        Map<String, Integer[]> tempSeedOccurrences = new LinkedHashMap<>();
         links.add(seed);
-        for (int i = 0; i < MAX_LINK_DEPTH.getValue(); i++) {
-            try {
-
-                try {
-                    crawlingController.sendCrawlingLog("Current depth: " + i);
-                    links.parallelStream().forEach(link -> {
-                        if (crawlingController.getStopRequest()) {
-                            throw new StopRequestException();
-                        }
-                        if (visitedPages.contains(link)) {
-                            return;
-                        }
-                        if (visitedPages.size() >= MAX_PAGES_VISITED.getValue()) {
-                            crawlingController.sendCrawlingLog("Max pages visits reached. Aborting");
-                            return;
-                        }
-                        System.out.println(visitedPages.size());
-                        try {
-                            crawlingController.sendCrawlingLog("Crawling [" + link + "]");
-                            Connection.Response response = Jsoup.connect(link)
-                                    .timeout(2 * 1000)
-                                    .ignoreHttpErrors(true)
-                                    .execute();
-                            if (response.statusCode() != 200) {
-                                crawlingController.sendCrawlingLog("Link responded with invalid status code. Skipping");
-                                return;
-                            }
-                            String contentType = response.contentType();
-                            if (!contentType.startsWith("text/html")) {
-                                crawlingController.sendCrawlingLog("Page format not HTML. Skipping");
-                                return;
-
-                            }
-                            if (link.contains("#")) {
-                                crawlingController.sendCrawlingLog("Link references to itself. Skipping");
-                                return;
-                            }
-                            System.out.println(link);
-                            Document document = response.parse();
-                            if (document.body() == null) {
-                                crawlingController.sendCrawlingLog("Link has no body. Skipping");
-                                return;
-                            }
-                            Integer[] occurrences = findOccurrences(terms, document);
-                            seedOccurrences.put(link, occurrences);
-                            newLinks.addAll(getPageLinks(document));
-                        } catch (SocketTimeoutException e) {
-                            String message = "Timout of connecting to the page [" + link + "]";
-                            crawlingController.sendCrawlingLog(message);
-                            e.printStackTrace();
-                        } catch (UnsupportedMimeTypeException e) {
-                            String message = "Unsupported mimetype for link [" + link + "]";
-                            crawlingController.sendCrawlingLog(message);
-                            e.printStackTrace();
-                        } catch (MalformedURLException e) {
-                            String message = "Unsupported protocol, link [" + link + "] skipped";
-                            crawlingController.sendCrawlingLog(message);
-                            e.printStackTrace();
-                        } catch (HttpStatusException e) {
-                            String message = "HTTP status is incorrect to parse the page [" + link + "]";
-                            crawlingController.sendCrawlingLog(message);
-                            e.printStackTrace();
-                        } catch (IOException | IllegalArgumentException e) {
-                            String message = "Link [" + link + "] skipped according to some reason";
-                            crawlingController.sendCrawlingLog(message);
-                            e.printStackTrace();
-                        } finally {
-                            visitedPages.add(link);
-                        }
-                    });
-                } catch (StopRequestException e) {
-                    System.out.println("EXCEPTION 1");
-                    crawlingController.setStopRequest(false);
-                    String message = "Crawling stopped";
-                    crawlingController.sendCrawlingLog(message);
-                    break;
-                }
-            } catch (ConcurrentModificationException e) {
-                System.out.println("EXCEPTION 2");
-                crawlingController.setStopRequest(false);
-                String message = "Crawling stopped";
-                crawlingController.sendCrawlingLog(message);
-                break;
-            }
-//            for (String link : links) {
-//                if (visitedPages.contains(link)) {
-//                    continue;
-//                }
-//                if (visitedPages.size() >= MAX_PAGES_VISITED.getValue()) {
-//                    crawlingController.sendCrawlingLog("Max pages visits reached. Aborting");
+        for (int i = 0; i < MAX_LINK_DEPTH.getValue() && !stopCrawling; i++) {
+            crawlingController.sendCurrentDepth(i);
+//            try {
+//                try {
+//                    crawlingController.sendCurrentDepth(i);
+//                    links.parallelStream().forEach(link -> {
+//                        if (crawlingController.getStopRequest()) {
+//                            throw new StopCrawlingException();
+//                        }
+//                        if (visitedPages.contains(link)) {
+//                            return;
+//                        }
+//                        if (visitedPages.size() >= MAX_PAGES_VISITED.getValue()) {
+//                            crawlingController.sendCrawlingLog("Max pages visits reached. Aborting");
+//                            throw new StopCrawlingException();
+//                        }
+//                        crawlingController.sendPagesCrawled(visitedPages.size());
+//                        System.out.println(visitedPages.size());
+//                        try {
+//                            crawlingController.sendCrawlingLog("Crawling [" + link + "]");
+//                            Connection.Response response = Jsoup.connect(link)
+//                                    .timeout(2 * 1000)
+//                                    .ignoreHttpErrors(true)
+//                                    .execute();
+//                            if (response.statusCode() != 200) {
+//                                crawlingController.sendCrawlingLog("Link responded with invalid status code. Skipping");
+//                                return;
+//                            }
+//                            String contentType = response.contentType();
+//                            if (!contentType.startsWith("text/html")) {
+//                                crawlingController.sendCrawlingLog("Page format not HTML. Skipping");
+//                                return;
+//
+//                            }
+//                            if (link.contains("#")) {
+//                                crawlingController.sendCrawlingLog("Link references to itself. Skipping");
+//                                return;
+//                            }
+//                            System.out.println(link);
+//                            Document document = response.parse();
+//                            if (document.body() == null) {
+//                                crawlingController.sendCrawlingLog("Link has no body. Skipping");
+//                                return;
+//                            }
+//                            Integer[] occurrences = findOccurrences(terms, document);
+//                            tempSeedOccurrences.put(link, occurrences);
+//                            newLinks.addAll(getPageLinks(document));
+//                        } catch (SocketTimeoutException e) {
+//                            String message = "Timout of connecting to the page [" + link + "]";
+//                            crawlingController.sendCrawlingLog(message);
+//                            e.printStackTrace();
+//                        } catch (UnsupportedMimeTypeException e) {
+//                            String message = "Unsupported mimetype for link [" + link + "]";
+//                            crawlingController.sendCrawlingLog(message);
+//                            e.printStackTrace();
+//                        } catch (MalformedURLException e) {
+//                            String message = "Unsupported protocol, link [" + link + "] skipped";
+//                            crawlingController.sendCrawlingLog(message);
+//                            e.printStackTrace();
+//                        } catch (HttpStatusException e) {
+//                            String message = "HTTP status is incorrect to parse the page [" + link + "]";
+//                            crawlingController.sendCrawlingLog(message);
+//                            e.printStackTrace();
+//                        } catch (IOException | IllegalArgumentException e) {
+//                            String message = "Link [" + link + "] skipped according to some reason";
+//                            crawlingController.sendCrawlingLog(message);
+//                            e.printStackTrace();
+//                        } finally {
+//                            visitedPages.add(link);
+//                        }
+//                    });
+//                } catch (StopCrawlingException e) {
+//                    System.out.println("EXCEPTION 1");
+//                    crawlingController.setStopRequest(false);
+//                    String message = "Crawling stopped";
+//                    crawlingController.sendCrawlingLog(message);
 //                    break;
 //                }
-//                System.out.println(visitedPages.size());
-//                try {
-//                    crawlingController.sendCrawlingLog("Crawling [" + link + "]");
-//                    Connection.Response response = Jsoup.connect(link)
-//                            .timeout(2 * 1000)
-//                            .ignoreHttpErrors(true)
-//                            .execute();
-//                    if (response.statusCode() != 200) {
-//                        crawlingController.sendCrawlingLog("Link responded with invalid status code. Skipping");
-//                        continue;
-//                    }
-//                    String contentType = response.contentType();
-//                    if (!contentType.startsWith("text/html")) {
-//                        crawlingController.sendCrawlingLog("Page format not HTML. Skipping");
-//                        continue;
-//
-//                    }
-//                    if (link.contains("#")) {
-//                        crawlingController.sendCrawlingLog("Link references to itself. Skipping");
-//                        continue;
-//                    }
-//                    System.out.println(link);
-//                    Document document = response.parse();
-//                    if (document.body() == null) {
-//                        crawlingController.sendCrawlingLog("Link has no body. Skipping");
-//                        continue;
-//                    }
-//                    Integer[] occurrences = findOccurrences(terms, document);
-//                    seedOccurrences.put(link, occurrences);
-//                    newLinks.addAll(getPageLinks(document));
-//                } catch (SocketTimeoutException e) {
-//                    String message = "Timout of connecting to the page [" + link + "]";
-//                    crawlingController.sendCrawlingLog(message);
-//                    e.printStackTrace();
-//                } catch (UnsupportedMimeTypeException e) {
-//                    String message = "Unsupported mimetype for link [" + link + "]";
-//                    crawlingController.sendCrawlingLog(message);
-//                    e.printStackTrace();
-//                } catch (MalformedURLException e) {
-//                    String message = "Unsupported protocol, link [" + link + "] skipped";
-//                    crawlingController.sendCrawlingLog(message);
-//                    e.printStackTrace();
-//                } catch (HttpStatusException e) {
-//                    String message = "HTTP status is incorrect to parse the page [" + link + "]";
-//                    crawlingController.sendCrawlingLog(message);
-//                    e.printStackTrace();
-//                } catch (IOException | IllegalArgumentException e) {
-//                    String message = "Link [" + link + "] skipped according to some reason";
-//                    crawlingController.sendCrawlingLog(message);
-//                    e.printStackTrace();
-//                } finally {
-//                    visitedPages.add(link);
-//                }
+//            } catch (ConcurrentModificationException e) {
+//                System.out.println("EXCEPTION 2");
+//                crawlingController.setStopRequest(false);
+//                String message = "Crawling stopped";
+//                crawlingController.sendCrawlingLog(message);
+//                break;
 //            }
+            for (String link : links) {
+                if (visitedPages.contains(link)) {
+                    continue;
+                }
+                if (visitedPages.size() >= MAX_PAGES_VISITED.getValue()) {
+                    crawlingController.sendCrawlingLog("Max pages visits reached. Aborting");
+                    stopCrawling = true;
+                    break;
+                }
+                System.out.println(visitedPages.size());
+                crawlingController.sendPagesCrawled(visitedPages.size());
+                try {
+                    crawlingController.sendCrawlingLog("Crawling [" + link + "]");
+                    Connection.Response response = Jsoup.connect(link)
+                            .timeout(2 * 1000)
+                            .ignoreHttpErrors(true)
+                            .execute();
+                    if (response.statusCode() != 200) {
+                        crawlingController.sendCrawlingLog("Link responded with invalid status code. Skipping");
+                        continue;
+                    }
+                    String contentType = response.contentType();
+                    if (!contentType.startsWith("text/html")) {
+                        crawlingController.sendCrawlingLog("Page format not HTML. Skipping");
+                        continue;
+
+                    }
+                    if (link.contains("#")) {
+                        crawlingController.sendCrawlingLog("Link references to itself. Skipping");
+                        continue;
+                    }
+                    System.out.println(link);
+                    Document document = response.parse();
+                    if (document.body() == null) {
+                        crawlingController.sendCrawlingLog("Link has no body. Skipping");
+                        continue;
+                    }
+                    Integer[] occurrences = findOccurrences(terms, document);
+                    seedOccurrences.put(link, occurrences);
+                    newLinks.addAll(getPageLinks(document));
+                } catch (SocketTimeoutException e) {
+                    String message = "Timout of connecting to the page [" + link + "]";
+                    crawlingController.sendCrawlingLog(message);
+                    e.printStackTrace();
+                } catch (UnsupportedMimeTypeException e) {
+                    String message = "Unsupported mimetype for link [" + link + "]";
+                    crawlingController.sendCrawlingLog(message);
+                    e.printStackTrace();
+                } catch (MalformedURLException e) {
+                    String message = "Unsupported protocol, link [" + link + "] skipped";
+                    crawlingController.sendCrawlingLog(message);
+                    e.printStackTrace();
+                } catch (HttpStatusException e) {
+                    String message = "HTTP status is incorrect to parse the page [" + link + "]";
+                    crawlingController.sendCrawlingLog(message);
+                    e.printStackTrace();
+                } catch (IOException | IllegalArgumentException e) {
+                    String message = "Link [" + link + "] skipped according to some reason";
+                    crawlingController.sendCrawlingLog(message);
+                    e.printStackTrace();
+                } finally {
+                    visitedPages.add(link);
+                }
+            }
             links.addAll(newLinks);
             newLinks.clear();
         }
 
+//        seedOccurrences = new LinkedHashMap<>(tempSeedOccurrences);
         for (Map.Entry<String, Integer[]> entry : seedOccurrences.entrySet()) {
             System.out.print(entry.getKey() + " ");
             for (Integer hit : entry.getValue()) {

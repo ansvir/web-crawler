@@ -30,7 +30,7 @@
                 <div class="col mt-2">
                     <label for="inputSeed">Seed</label>
                     <div class="input-group mb-3">
-                        <input type="text" class="form-control" id="inputSeed" placeholder="Enter URL here">
+                        <input type="text" class="form-control" id="inputSeed" placeholder="Enter URL here"/>
                     </div>
                 </div>
             </div>
@@ -60,13 +60,19 @@
                 <div class="col">
                     <label for="output">Output</label>
                     <div class="input-group">
-                        <textarea rows="15" readonly style="resize: none" id="output" class="form-control"></textarea>
+                        <textarea rows="15" readonly="readonly" style="resize: none" id="output" class="form-control"></textarea>
                     </div>
                 </div>
             </div>
             <div class="row">
                 <div class="col">
                     <button id="stopCrawlButton" type="button" class="btn btn-danger rounded mb-2">Stop</button>
+                </div>
+                <div class="col">
+                    <div id="pagesCrawledLabel">Current pages crawled: <span id="pagesCrawledValue"></span></div>
+                </div>
+                <div class="col">
+                    <div id="currentDepthLabel">Current depth: <span id="currentDepthValue"></span></div>
                 </div>
             </div>
             <div class="row">
@@ -81,7 +87,7 @@
             </div>
             <div class="row">
                 <div class="col">
-                    <button id="downloadAllStatReport" type="button" class="btn btn-info rounded mb-2">All Report&nbsp;
+                    <button id="downloadAllStatReport" type="button" class="btn btn-info rounded mb-2">All Report&#160;
                         <span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-arrow-down" viewBox="0 0 16 16">
                                 <path d="M8.5 6.5a.5.5 0 0 0-1 0v3.793L6.354 9.146a.5.5 0 1 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L8.5 10.293V6.5z"/>
@@ -91,7 +97,7 @@
                     </button>
                 </div>
                 <div class="col">
-                    <button id="downloadTopTenStatReport" type="button" class="btn btn-info rounded mb-2">Top Ten Report&nbsp;
+                    <button id="downloadTopTenStatReport" type="button" class="btn btn-info rounded mb-2">Top Ten Report&#160;
                         <span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-bar-graph" viewBox="0 0 16 16">
                                 <path d="M10 13.5a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-6a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v6zm-2.5.5a.5.5 0 0 1-.5-.5v-4a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5h-1zm-3 0a.5.5 0 0 1-.5-.5v-2a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-1z"/>

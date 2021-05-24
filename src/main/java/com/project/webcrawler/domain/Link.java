@@ -11,6 +11,7 @@ public class Link {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(length = 1000)
     private String name;
     @OneToMany
     private List<Hit> hits;
