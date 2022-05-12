@@ -1,5 +1,7 @@
 # web-crawler
 
+Simple implementation of web-crawler.
+
 To startup the application:
 
 1. Clone the code from this repository.
